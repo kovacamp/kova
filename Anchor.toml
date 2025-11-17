@@ -1,0 +1,16 @@
+[features]
+seeds = true
+skip-lint = false
+
+[programs.localnet]
+kova_scanner = "KovA5cAnNeR7xQwK8rY2NjmEv3bUnDL4sHfT9pRs1Wz"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "Localnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "npx jest --config tests/jest.config.js"
