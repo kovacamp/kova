@@ -1,0 +1,22 @@
+[package]
+name = "kova-scanner"
+version = "0.1.0"
+description = "Solana token survival probability scanner -- on-chain scoring and snapshot recording"
+edition = "2021"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "kova_scanner"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = { workspace = true }
+anchor-spl = { workspace = true }
+kova-math = { workspace = true }
