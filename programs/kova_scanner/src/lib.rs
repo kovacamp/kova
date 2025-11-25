@@ -1,0 +1,10 @@
+use anchor_lang::prelude::*;
+
+pub mod state;
+
+declare_id!("KovA5cAnNeR7xQwK8rY2NjmEv3bUnDL4sHfT9pRs1Wz");
+
+#[program]
+pub mod kova_scanner {
+    use super::*;
+}
