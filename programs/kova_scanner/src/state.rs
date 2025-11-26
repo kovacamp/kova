@@ -43,3 +43,34 @@ impl ScoreTier {
 /// Weights applied to each metric dimension when computing the aggregate score.
 /// All weights are in basis points (0-10000). Total should sum to 10000.
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, Debug)]
+pub struct ScoringWeights {
+    /// Weight for fresh wallet percentage (inverse -- higher fresh = lower score).
+    pub fresh_wallet_weight: u16,
+    /// Weight for bundler percentage (inverse).
+    pub bundler_weight: u16,
+    /// Weight for top 10 holder concentration (inverse).
+    pub top10_holder_weight: u16,
+    /// Weight for smart money entry count (positive).
+    pub smart_money_weight: u16,
+    /// Weight for developer holdings percentage (inverse).
+    pub dev_holdings_weight: u16,
+    /// Weight for LP burn/lock status (positive).
+    pub lp_locked_weight: u16,
+    /// Weight for mint authority revocation (positive).
+    pub mint_revoked_weight: u16,
+    /// Weight for volume trend direction (positive).
+    pub volume_trend_weight: u16,
+    /// Weight for time-series slope of fresh wallet % (positive = declining).
+    pub fresh_slope_weight: u16,
+    /// Weight for time-series slope of top10 % (positive = distributing).
+    pub top10_slope_weight: u16,
+}
+
+/// Raw token metrics collected from on-chain and off-chain data sources.
+/// Stored as basis points (0-10000) where applicable, or raw counts.
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, Debug)]
+pub struct TokenMetrics {
+    /// Fresh wallet percentage in basis points (0-10000).
+    pub fresh_wallet_bps: u16,
+    /// Bundler percentage in basis points (0-10000).
+    pub bundler_bps: u16,
