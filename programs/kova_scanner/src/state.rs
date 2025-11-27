@@ -74,3 +74,36 @@ pub struct TokenMetrics {
     pub fresh_wallet_bps: u16,
     /// Bundler percentage in basis points (0-10000).
     pub bundler_bps: u16,
+    /// Top 10 holder concentration in basis points (0-10000).
+    pub top10_holder_bps: u16,
+    /// Number of smart money wallets that entered.
+    pub smart_money_count: u16,
+    /// Developer holdings percentage in basis points (0-10000).
+    pub dev_holdings_bps: u16,
+    /// Whether LP is burned or locked (1 = yes, 0 = no).
+    pub lp_locked: u8,
+    /// Whether mint authority is revoked (1 = yes, 0 = no).
+    pub mint_revoked: u8,
+    /// Market cap in SOL lamports.
+    pub mcap_lamports: u64,
+    /// 1-minute volume in SOL lamports.
+    pub volume_1m_lamports: u64,
+    /// Total unique holder count.
+    pub holder_count: u32,
+    /// Volume trend signal: 1 = increasing, 0 = flat/decreasing.
+    pub volume_trend_up: u8,
+}
+
+/// Global scanner configuration. Singleton PDA derived from ["scan_config"].
+#[account]
+pub struct TokenScanConfig {
+    /// The authority pubkey that can update config and submit snapshots.
+    pub authority: Pubkey,
+    /// Scoring weights for each metric dimension.
+    pub weights: ScoringWeights,
+    /// Total number of snapshots recorded across all tokens.
+    pub total_snapshots_recorded: u64,
+    /// Total number of score calculations performed.
+    pub total_scores_calculated: u64,
+    /// Minimum interval between snapshots for the same token (seconds).
+    pub min_snapshot_interval_secs: i64,
