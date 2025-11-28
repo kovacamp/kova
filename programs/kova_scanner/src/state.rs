@@ -107,3 +107,39 @@ pub struct TokenScanConfig {
     pub total_scores_calculated: u64,
     /// Minimum interval between snapshots for the same token (seconds).
     pub min_snapshot_interval_secs: i64,
+    /// Unix timestamp of the last config update.
+    pub last_updated_at: i64,
+    /// PDA bump seed for address derivation.
+    pub bump: u8,
+}
+
+impl TokenScanConfig {
+    /// Account discriminator (8) + pubkey (32) + ScoringWeights (10 * 2 = 20)
+    /// + u64 (8) + u64 (8) + i64 (8) + i64 (8) + u8 (1)
+    pub const SPACE: usize = 8 + 32 + 20 + 8 + 8 + 8 + 8 + 1;
+    pub const SEED_PREFIX: &'static [u8] = b"scan_config";
+}
+
+/// Per-token snapshot storing a single point-in-time metric capture.
+/// PDA derived from ["token_snapshot", token_mint, snapshot_index].
+#[account]
+pub struct TokenSnapshot {
+    /// The token mint address this snapshot belongs to.
+    pub token_mint: Pubkey,
+    /// Sequential index for this token's snapshots (0-based).
+    pub snapshot_index: u32,
+    /// The captured metrics at this point in time.
+    pub metrics: TokenMetrics,
+    /// Unix timestamp when this snapshot was captured.
+    pub captured_at: i64,
+    /// The recorder (operator) who submitted this snapshot.
+    pub recorder: Pubkey,
+    /// PDA bump seed.
+    pub bump: u8,
+}
+
+impl TokenSnapshot {
+    /// 8 + 32 + 4 + TokenMetrics (2+2+2+2+2+1+1+8+8+4+1 = 33) + 8 + 32 + 1
+    pub const SPACE: usize = 8 + 32 + 4 + 33 + 8 + 32 + 1;
+    pub const SEED_PREFIX: &'static [u8] = b"token_snapshot";
+}
