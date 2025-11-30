@@ -143,3 +143,37 @@ impl TokenSnapshot {
     pub const SPACE: usize = 8 + 32 + 4 + 33 + 8 + 32 + 1;
     pub const SEED_PREFIX: &'static [u8] = b"token_snapshot";
 }
+
+/// Aggregated scan record containing the computed score and probability distribution.
+/// PDA derived from ["scan_record", token_mint].
+#[account]
+pub struct ScanRecord {
+    /// The token mint address this record belongs to.
+    pub token_mint: Pubkey,
+    /// Computed survival probability score (0-100).
+    pub score: u8,
+    /// Assigned score tier based on the computed score.
+    pub tier: ScoreTier,
+    /// Probability of death before graduation, in basis points (0-10000).
+    pub prob_death_bps: u16,
+    /// Probability of reaching 100K+ market cap, in basis points.
+    pub prob_100k_bps: u16,
+    /// Probability of reaching 300K+ (runner), in basis points.
+    pub prob_300k_bps: u16,
+    /// Probability of reaching 1M+ (mega run), in basis points.
+    pub prob_1m_bps: u16,
+    /// Number of snapshots used to compute this score.
+    pub snapshots_used: u32,
+    /// Unix timestamp of the most recent snapshot included.
+    pub latest_snapshot_at: i64,
+    /// Unix timestamp of when this score was computed.
+    pub scored_at: i64,
+    /// PDA bump seed.
+    pub bump: u8,
+}
+
+impl ScanRecord {
+    /// 8 + 32 + 1 + 1 (tier) + 2 + 2 + 2 + 2 + 4 + 8 + 8 + 1
+    pub const SPACE: usize = 8 + 32 + 1 + 1 + 2 + 2 + 2 + 2 + 4 + 8 + 8 + 1;
+    pub const SEED_PREFIX: &'static [u8] = b"scan_record";
+}
