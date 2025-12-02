@@ -25,3 +25,20 @@ pub enum ScannerError {
     /// No snapshot data exists to compute a score from.
     #[msg("No snapshot data available for score calculation")]
     NoSnapshotData,
+
+    /// Token mint address cannot be the system program or default pubkey.
+    #[msg("Invalid token mint address")]
+    InvalidTokenMint,
+
+    /// Minimum snapshot interval must be positive.
+    #[msg("Snapshot interval must be at least 1 second")]
+    InvalidSnapshotInterval,
+
+    /// Snapshot index exceeds the maximum allowed per token.
+    #[msg("Snapshot index overflow")]
+    SnapshotIndexOverflow,
+
+    /// Boolean metric field must be 0 or 1.
+    #[msg("Boolean metric must be 0 or 1")]
+    InvalidBooleanMetric,
+}
