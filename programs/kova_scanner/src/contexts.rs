@@ -21,3 +21,16 @@ pub struct Initialize<'info> {
 
 #[derive(Accounts)]
 #[instruction(token_mint: Pubkey, metrics: crate::state::TokenMetrics)]
+pub struct RecordSnapshot<'info> {
+    #[account(mut)]
+    pub recorder: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [TokenScanConfig::SEED_PREFIX],
+        bump = scan_config.bump,
+        constraint = recorder.key() == scan_config.authority @ crate::errors::ScannerError::UnauthorizedAuthority,
+    )]
+    pub scan_config: Account<'info, TokenScanConfig>,
+
+    /// The scan record for this token. Used to read the current snapshot count
