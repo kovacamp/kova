@@ -34,3 +34,29 @@ pub struct RecordSnapshot<'info> {
     pub scan_config: Account<'info, TokenScanConfig>,
 
     /// The scan record for this token. Used to read the current snapshot count
+    /// and derive the next snapshot index. Initialized separately or via
+    /// calculate_score if it does not exist yet.
+    #[account(
+        mut,
+        seeds = [ScanRecord::SEED_PREFIX, token_mint.as_ref()],
+        bump = scan_record.bump,
+    )]
+    pub scan_record: Account<'info, ScanRecord>,
+
+    #[account(
+        init,
+        payer = recorder,
+        space = TokenSnapshot::SPACE,
+        seeds = [
+            TokenSnapshot::SEED_PREFIX,
+            token_mint.as_ref(),
+            &scan_record.snapshots_used.to_le_bytes(),
+        ],
+        bump,
+    )]
+    pub token_snapshot: Account<'info, TokenSnapshot>,
+
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
