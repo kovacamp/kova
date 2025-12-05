@@ -60,3 +60,40 @@ pub struct RecordSnapshot<'info> {
 }
 
 #[derive(Accounts)]
+pub struct CalculateScore<'info> {
+    #[account(mut)]
+    pub operator: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [TokenScanConfig::SEED_PREFIX],
+        bump = scan_config.bump,
+    )]
+    pub scan_config: Account<'info, TokenScanConfig>,
+
+    #[account(
+        mut,
+        seeds = [ScanRecord::SEED_PREFIX, scan_record.token_mint.as_ref()],
+        bump = scan_record.bump,
+    )]
+    pub scan_record: Account<'info, ScanRecord>,
+
+    /// The most recent token snapshot. The operator must supply the correct
+    /// snapshot account matching the latest index.
+    pub latest_snapshot: Account<'info, TokenSnapshot>,
+}
+
+#[derive(Accounts)]
+pub struct UpdateConfig<'info> {
+    #[account(
+        constraint = authority.key() == scan_config.authority @ crate::errors::ScannerError::UnauthorizedAuthority,
+    )]
+    pub authority: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [TokenScanConfig::SEED_PREFIX],
+        bump = scan_config.bump,
+    )]
+    pub scan_config: Account<'info, TokenScanConfig>,
+}
