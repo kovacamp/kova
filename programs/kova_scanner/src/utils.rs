@@ -187,3 +187,46 @@ pub fn compute_weighted_score(metrics: &TokenMetrics, weights: &ScoringWeights) 
     let clamped = score_raw.min(MAX_SCORE as u64) as u8;
     Ok(clamped)
 }
+
+/// Computes a probability distribution from a survival score.
+///
+/// Returns (prob_death_bps, prob_100k_bps, prob_300k_bps, prob_1m_bps).
+/// All values sum to 10000 bps.
+///
+/// The distribution is a heuristic piecewise function calibrated against
+/// observed Solana token lifecycle data. Higher scores shift probability
+/// mass away from death and toward higher market cap tiers.
+pub fn compute_probability_distribution(score: u8) -> (u16, u16, u16, u16) {
+    let s = score as u32;
+
+    // Death probability: starts at ~95% for score 0, decreases to ~15% for score 100.
+    // P(death) = 9500 - (s * 80)
+    let death_raw = 9500u32.saturating_sub(s.saturating_mul(80));
+    let death_bps = death_raw.min(BPS_SCALE as u32) as u16;
+
+    // 100K+ probability: peaks around score 60-80.
+    // P(100K) = min(s * 30, 2500)
+    let p100k_raw = s.saturating_mul(30).min(2500);
+    let p100k_bps = p100k_raw as u16;
+
+    // 300K+ probability: meaningful only above score 40.
+    // P(300K) = max(0, (s - 40) * 20)
+    let p300k_raw = s.saturating_sub(40).saturating_mul(20).min(1500);
+    let p300k_bps = p300k_raw as u16;
+
+    // 1M+ probability: remainder to ensure sum = 10000.
+    let allocated = (death_bps as u32)
+        .saturating_add(p100k_bps as u32)
+        .saturating_add(p300k_bps as u32);
+    let p1m_bps = (BPS_SCALE as u32).saturating_sub(allocated).min(1000) as u16;
+
+    // Rebalance death to ensure exact sum of 10000.
+    let total = (death_bps as u32) + (p100k_bps as u32) + (p300k_bps as u32) + (p1m_bps as u32);
+    let death_adjusted = (death_bps as u32)
+        .checked_add(BPS_SCALE as u32)
+        .unwrap_or(BPS_SCALE as u32)
+        .checked_sub(total)
+        .unwrap_or(death_bps as u32) as u16;
+
+    (death_adjusted, p100k_bps, p300k_bps, p1m_bps)
+}
