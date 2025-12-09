@@ -230,3 +230,21 @@ pub fn compute_probability_distribution(score: u8) -> (u16, u16, u16, u16) {
 
     (death_adjusted, p100k_bps, p300k_bps, p1m_bps)
 }
+
+/// Validates that a pubkey is not the default (all-zeros) address.
+pub fn validate_token_mint(mint: &Pubkey) -> Result<()> {
+    require!(*mint != Pubkey::default(), ScannerError::InvalidTokenMint);
+    Ok(())
+}
+
+/// Derives the TokenScanConfig PDA address and bump.
+pub fn derive_config_pda(program_id: &Pubkey) -> (Pubkey, u8) {
+    Pubkey::find_program_address(&[b"scan_config"], program_id)
+}
+
+/// Derives a ScanRecord PDA address and bump for a given token mint.
+pub fn derive_scan_record_pda(token_mint: &Pubkey, program_id: &Pubkey) -> (Pubkey, u8) {
+    Pubkey::find_program_address(&[b"scan_record", token_mint.as_ref()], program_id)
+}
+
+/// Derives a TokenSnapshot PDA address and bump.
