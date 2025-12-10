@@ -248,3 +248,87 @@ pub fn derive_scan_record_pda(token_mint: &Pubkey, program_id: &Pubkey) -> (Pubk
 }
 
 /// Derives a TokenSnapshot PDA address and bump.
+pub fn derive_snapshot_pda(
+    token_mint: &Pubkey,
+    snapshot_index: u32,
+    program_id: &Pubkey,
+) -> (Pubkey, u8) {
+    Pubkey::find_program_address(
+        &[
+            b"token_snapshot",
+            token_mint.as_ref(),
+            &snapshot_index.to_le_bytes(),
+        ],
+        program_id,
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn default_weights() -> ScoringWeights {
+        ScoringWeights {
+            fresh_wallet_weight: 1500,
+            bundler_weight: 1500,
+            top10_holder_weight: 1000,
+            smart_money_weight: 1000,
+            dev_holdings_weight: 1000,
+            lp_locked_weight: 800,
+            mint_revoked_weight: 800,
+            volume_trend_weight: 700,
+            fresh_slope_weight: 850,
+            top10_slope_weight: 850,
+        }
+    }
+
+    #[test]
+    fn test_validate_weights_correct_sum() {
+        let weights = default_weights();
+        assert!(validate_weights(&weights).is_ok());
+    }
+
+    #[test]
+    fn test_validate_weights_incorrect_sum() {
+        let mut weights = default_weights();
+        weights.fresh_wallet_weight = 9999;
+        assert!(validate_weights(&weights).is_err());
+    }
+
+    #[test]
+    fn test_validate_metrics_valid() {
+        let metrics = TokenMetrics {
+            fresh_wallet_bps: 5400,
+            bundler_bps: 2800,
+            top10_holder_bps: 4300,
+            smart_money_count: 2,
+            dev_holdings_bps: 800,
+            lp_locked: 0,
+            mint_revoked: 1,
+            mcap_lamports: 50_000_000_000,
+            volume_1m_lamports: 1_000_000_000,
+            holder_count: 150,
+            volume_trend_up: 1,
+        };
+        assert!(validate_metrics(&metrics).is_ok());
+    }
+
+    #[test]
+    fn test_validate_metrics_out_of_range() {
+        let metrics = TokenMetrics {
+            fresh_wallet_bps: 10001,
+            bundler_bps: 0,
+            top10_holder_bps: 0,
+            smart_money_count: 0,
+            dev_holdings_bps: 0,
+            lp_locked: 0,
+            mint_revoked: 0,
+            mcap_lamports: 0,
+            volume_1m_lamports: 0,
+            holder_count: 0,
+            volume_trend_up: 0,
+        };
+        assert!(validate_metrics(&metrics).is_err());
+    }
+
+    #[test]
