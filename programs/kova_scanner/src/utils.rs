@@ -332,3 +332,162 @@ mod tests {
     }
 
     #[test]
+    fn test_validate_metrics_invalid_boolean() {
+        let metrics = TokenMetrics {
+            fresh_wallet_bps: 5000,
+            bundler_bps: 2000,
+            top10_holder_bps: 3000,
+            smart_money_count: 1,
+            dev_holdings_bps: 500,
+            lp_locked: 2, // invalid
+            mint_revoked: 1,
+            mcap_lamports: 0,
+            volume_1m_lamports: 0,
+            holder_count: 0,
+            volume_trend_up: 0,
+        };
+        assert!(validate_metrics(&metrics).is_err());
+    }
+
+    #[test]
+    fn test_compute_score_healthy_token() {
+        let weights = default_weights();
+        let metrics = TokenMetrics {
+            fresh_wallet_bps: 1000, // low fresh = good
+            bundler_bps: 500,       // low bundler = good
+            top10_holder_bps: 2000, // moderately distributed
+            smart_money_count: 10,  // strong SM presence
+            dev_holdings_bps: 200,  // low dev holdings = good
+            lp_locked: 1,
+            mint_revoked: 1,
+            mcap_lamports: 100_000_000_000,
+            volume_1m_lamports: 5_000_000_000,
+            holder_count: 500,
+            volume_trend_up: 1,
+        };
+        let score = compute_weighted_score(&metrics, &weights).unwrap();
+        assert!(
+            score >= 70,
+            "Healthy token should score >= 70, got {}",
+            score
+        );
+    }
+
+    #[test]
+    fn test_compute_score_risky_token() {
+        let weights = default_weights();
+        let metrics = TokenMetrics {
+            fresh_wallet_bps: 8900, // very high fresh = bad
+            bundler_bps: 6000,      // high bundler = bad
+            top10_holder_bps: 7800, // concentrated = bad
+            smart_money_count: 0,
+            dev_holdings_bps: 4000, // high dev = bad
+            lp_locked: 0,
+            mint_revoked: 0,
+            mcap_lamports: 5_000_000,
+            volume_1m_lamports: 100_000,
+            holder_count: 15,
+            volume_trend_up: 0,
+        };
+        let score = compute_weighted_score(&metrics, &weights).unwrap();
+        assert!(score <= 30, "Risky token should score <= 30, got {}", score);
+    }
+
+    #[test]
+    fn test_compute_score_all_zeros() {
+        let weights = default_weights();
+        let metrics = TokenMetrics {
+            fresh_wallet_bps: 0,
+            bundler_bps: 0,
+            top10_holder_bps: 0,
+            smart_money_count: 0,
+            dev_holdings_bps: 0,
+            lp_locked: 0,
+            mint_revoked: 0,
+            mcap_lamports: 0,
+            volume_1m_lamports: 0,
+            holder_count: 0,
+            volume_trend_up: 0,
+        };
+        let score = compute_weighted_score(&metrics, &weights).unwrap();
+        // All inverse metrics at 0 => sub-score 10000. Boolean metrics at 0.
+        // SM at 0. Weighted by ~77% of weight for inverse metrics.
+        assert!(
+            score >= 50,
+            "All-zero inverse metrics should score decently, got {}",
+            score
+        );
+    }
+
+    #[test]
+    fn test_compute_score_max_all_positive() {
+        let weights = default_weights();
+        let metrics = TokenMetrics {
+            fresh_wallet_bps: 0,
+            bundler_bps: 0,
+            top10_holder_bps: 0,
+            smart_money_count: 20,
+            dev_holdings_bps: 0,
+            lp_locked: 1,
+            mint_revoked: 1,
+            mcap_lamports: 1_000_000_000_000,
+            volume_1m_lamports: 100_000_000_000,
+            holder_count: 10_000,
+            volume_trend_up: 1,
+        };
+        let score = compute_weighted_score(&metrics, &weights).unwrap();
+        assert_eq!(
+            score, 100,
+            "Perfect metrics should yield 100, got {}",
+            score
+        );
+    }
+
+    #[test]
+    fn test_probability_distribution_sums_to_10000() {
+        for s in 0..=100 {
+            let (death, p100k, p300k, p1m) = compute_probability_distribution(s);
+            let total = (death as u32) + (p100k as u32) + (p300k as u32) + (p1m as u32);
+            assert_eq!(
+                total, 10_000,
+                "Distribution for score {} sums to {}, expected 10000",
+                s, total
+            );
+        }
+    }
+
+    #[test]
+    fn test_probability_distribution_high_death_for_low_score() {
+        let (death, _, _, _) = compute_probability_distribution(0);
+        assert!(
+            death >= 8000,
+            "Score 0 should have high death probability, got {}",
+            death
+        );
+    }
+
+    #[test]
+    fn test_probability_distribution_low_death_for_high_score() {
+        let (death, _, _, _) = compute_probability_distribution(100);
+        assert!(
+            death <= 3000,
+            "Score 100 should have low death probability, got {}",
+            death
+        );
+    }
+
+    #[test]
+    fn test_score_tier_boundaries() {
+        use crate::state::ScoreTier;
+        assert_eq!(ScoreTier::from_score(0), ScoreTier::Critical);
+        assert_eq!(ScoreTier::from_score(19), ScoreTier::Critical);
+        assert_eq!(ScoreTier::from_score(20), ScoreTier::Dangerous);
+        assert_eq!(ScoreTier::from_score(39), ScoreTier::Dangerous);
+        assert_eq!(ScoreTier::from_score(40), ScoreTier::Caution);
+        assert_eq!(ScoreTier::from_score(59), ScoreTier::Caution);
+        assert_eq!(ScoreTier::from_score(60), ScoreTier::Moderate);
+        assert_eq!(ScoreTier::from_score(79), ScoreTier::Moderate);
+        assert_eq!(ScoreTier::from_score(80), ScoreTier::Healthy);
+        assert_eq!(ScoreTier::from_score(100), ScoreTier::Healthy);
+    }
+}
