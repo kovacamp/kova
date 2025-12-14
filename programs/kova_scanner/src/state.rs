@@ -177,4 +177,3 @@ impl ScanRecord {
     pub const SPACE: usize = 8 + 32 + 1 + 1 + 2 + 2 + 2 + 2 + 4 + 8 + 8 + 1;
     pub const SEED_PREFIX: &'static [u8] = b"scan_record";
 }
-// TODO: add Display impl for ScoreTier
