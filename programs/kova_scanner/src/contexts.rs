@@ -97,3 +97,4 @@ pub struct UpdateConfig<'info> {
     )]
     pub scan_config: Account<'info, TokenScanConfig>,
 }
+// TODO: add snapshot index validation
