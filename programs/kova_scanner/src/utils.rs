@@ -10,7 +10,6 @@ pub const BPS_SCALE: u64 = 10_000;
 pub const MAX_METRIC_BPS: u16 = 10_000;
 
 /// Maximum score value (100).
-/// Maximum survival score (0-100 range).
 pub const MAX_SCORE: u8 = 100;
 
 /// Validates that all scoring weights sum to exactly 10000 basis points.
