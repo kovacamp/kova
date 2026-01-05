@@ -1,0 +1,8 @@
+[package]
+name = "kova-math"
+version = "0.1.0"
+description = "Math primitives for the Kova scanner: weighted scoring, probability distribution, time-series statistics"
+edition = "2021"
+license = "MIT"
+
+[dependencies]
