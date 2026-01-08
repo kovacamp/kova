@@ -35,3 +35,44 @@ pub fn weighted_score(components: &[(u64, u64)]) -> Option<u64> {
 
     u64::try_from(score.min(100)).ok()
 }
+
+/// Computes a probability distribution from a survival score (0-100).
+///
+/// Returns an array of 4 probabilities in basis points that sum to 10000:
+/// [prob_death, prob_100k, prob_300k, prob_1m]
+///
+/// The distribution is a heuristic piecewise function calibrated against
+/// observed Solana token lifecycle data.
+pub fn probability_distribution(score: u64) -> Option<[u64; 4]> {
+    if score > 100 {
+        return None;
+    }
+
+    let s = score;
+
+    // Death probability: 95% at score 0, decreasing to ~15% at score 100
+    let death = 9500u64.saturating_sub(s.saturating_mul(80));
+
+    // 100K+ probability: scales linearly, caps at 25%
+    let p100k = s.saturating_mul(30).min(2500);
+
+    // 300K+ probability: only meaningful above score 40, caps at 15%
+    let p300k = s.saturating_sub(40).saturating_mul(20).min(1500);
+
+    // Remainder goes to 1M+
+    let allocated = death.saturating_add(p100k).saturating_add(p300k);
+    let p1m = BPS_SCALE.saturating_sub(allocated);
+
+    // Adjust death to ensure exact sum of 10000
+    let total = death + p100k + p300k + p1m;
+    let death_adjusted = death.checked_add(BPS_SCALE)?.checked_sub(total)?;
+
+    Some([death_adjusted, p100k, p300k, p1m])
+}
+
+/// Computes the slope (rate of change) of a time series using linear regression.
+///
+/// Given a slice of y-values sampled at uniform intervals, returns the slope
+/// as a fixed-point value multiplied by PRECISION to preserve precision.
+///
+/// Uses the formula: slope = (n * sum(xy) - sum(x) * sum(y)) / (n * sum(x^2) - sum(x)^2)
