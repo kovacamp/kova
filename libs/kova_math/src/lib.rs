@@ -241,3 +241,74 @@ pub fn std_deviation(values: &[u64]) -> Option<u64> {
 
     u64::try_from(std).ok()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_weighted_score_equal_weights() {
+        // All sub-scores at 5000 (50%), equal weights => score 50
+        let components = vec![(5000, 2500), (5000, 2500), (5000, 2500), (5000, 2500)];
+        let score = weighted_score(&components).unwrap();
+        assert_eq!(score, 50);
+    }
+
+    #[test]
+    fn test_weighted_score_max() {
+        let components = vec![(10000, 5000), (10000, 5000)];
+        let score = weighted_score(&components).unwrap();
+        assert_eq!(score, 100);
+    }
+
+    #[test]
+    fn test_weighted_score_min() {
+        let components = vec![(0, 5000), (0, 5000)];
+        let score = weighted_score(&components).unwrap();
+        assert_eq!(score, 0);
+    }
+
+    #[test]
+    fn test_weighted_score_mixed() {
+        // 10000 * 7000 + 0 * 3000 = 70_000_000 / 10000 = 7000 / 100 = 70
+        let components = vec![(10000, 7000), (0, 3000)];
+        let score = weighted_score(&components).unwrap();
+        assert_eq!(score, 70);
+    }
+
+    #[test]
+    fn test_weighted_score_empty_returns_none() {
+        assert!(weighted_score(&[]).is_none());
+    }
+
+    #[test]
+    fn test_probability_distribution_sums_to_10000() {
+        for s in 0..=100 {
+            let dist = probability_distribution(s).unwrap();
+            let total: u64 = dist.iter().sum();
+            assert_eq!(total, 10_000, "Score {} distribution sums to {}", s, total);
+        }
+    }
+
+    #[test]
+    fn test_probability_distribution_high_death_at_zero() {
+        let dist = probability_distribution(0).unwrap();
+        assert!(dist[0] >= 8000, "Death probability at score 0: {}", dist[0]);
+    }
+
+    #[test]
+    fn test_probability_distribution_low_death_at_100() {
+        let dist = probability_distribution(100).unwrap();
+        assert!(
+            dist[0] <= 3000,
+            "Death probability at score 100: {}",
+            dist[0]
+        );
+    }
+
+    #[test]
+    fn test_probability_distribution_invalid_score() {
+        assert!(probability_distribution(101).is_none());
+    }
+
+    #[test]
