@@ -167,3 +167,77 @@ pub fn exponential_moving_average(
 
     u64::try_from(result).ok()
 }
+
+/// Normalizes a value to a z-score using fixed-point arithmetic.
+///
+/// z = (value - mean) * PRECISION / std_dev
+///
+/// Returns 0 if std_dev is zero.
+pub fn z_score_normalize(value: u64, mean: u64, std_dev: u64) -> i128 {
+    if std_dev == 0 {
+        return 0;
+    }
+
+    let val = value as i128;
+    let m = mean as i128;
+    let sd = std_dev as i128;
+
+    val.saturating_sub(m)
+        .saturating_mul(PRECISION as i128)
+        .checked_div(sd)
+        .unwrap_or(0)
+}
+
+/// Integer square root via Newton's method. Used for standard deviation
+/// calculations and other statistical computations.
+pub fn isqrt(value: u128) -> u128 {
+    if value < 2 {
+        return value;
+    }
+
+    let mut guess = value;
+    let mut previous = 0u128;
+
+    while guess != previous {
+        previous = guess;
+        // Newton step: next = (guess + value / guess) / 2
+        guess = guess
+            .checked_add(value.checked_div(guess).unwrap_or(0))
+            .unwrap_or(guess)
+            .checked_div(2)
+            .unwrap_or(guess);
+    }
+
+    guess
+}
+
+/// Computes the standard deviation of a slice of values using fixed-point math.
+///
+/// Returns the standard deviation as a u64.
+pub fn std_deviation(values: &[u64]) -> Option<u64> {
+    let n = values.len();
+    if n < 2 {
+        return Some(0);
+    }
+
+    let n_128 = n as u128;
+    let sum: u128 = values.iter().map(|&v| v as u128).sum();
+    let mean = sum.checked_div(n_128)?;
+
+    let variance_sum: u128 = values
+        .iter()
+        .map(|&v| {
+            let diff = if (v as u128) >= mean {
+                (v as u128) - mean
+            } else {
+                mean - (v as u128)
+            };
+            diff.checked_mul(diff).unwrap_or(u128::MAX)
+        })
+        .try_fold(0u128, |acc, v| acc.checked_add(v))?;
+
+    let variance = variance_sum.checked_div(n_128.checked_sub(1)?)?;
+    let std = isqrt(variance);
+
+    u64::try_from(std).ok()
+}
