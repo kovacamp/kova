@@ -312,3 +312,69 @@ mod tests {
     }
 
     #[test]
+    fn test_time_series_slope_positive() {
+        let values = vec![1000, 2000, 3000, 4000, 5000];
+        let slope = time_series_slope(&values).unwrap();
+        assert!(slope > 0, "Ascending series should have positive slope");
+    }
+
+    #[test]
+    fn test_time_series_slope_negative() {
+        let values = vec![5000, 4000, 3000, 2000, 1000];
+        let slope = time_series_slope(&values).unwrap();
+        assert!(slope < 0, "Descending series should have negative slope");
+    }
+
+    #[test]
+    fn test_time_series_slope_flat() {
+        let values = vec![3000, 3000, 3000, 3000];
+        let slope = time_series_slope(&values).unwrap();
+        assert_eq!(slope, 0, "Flat series should have zero slope");
+    }
+
+    #[test]
+    fn test_time_series_slope_single_value() {
+        let values = vec![5000];
+        let slope = time_series_slope(&values).unwrap();
+        assert_eq!(slope, 0);
+    }
+
+    #[test]
+    fn test_rate_of_change_increase() {
+        let rate = rate_of_change(1000, 1500).unwrap();
+        // (1500 - 1000) * 10000 / 1000 = 5000 bps = 50% increase
+        assert_eq!(rate, 5000);
+    }
+
+    #[test]
+    fn test_rate_of_change_decrease() {
+        let rate = rate_of_change(1000, 500).unwrap();
+        // (500 - 1000) * 10000 / 1000 = -5000 bps = 50% decrease
+        assert_eq!(rate, -5000);
+    }
+
+    #[test]
+    fn test_rate_of_change_no_change() {
+        let rate = rate_of_change(1000, 1000).unwrap();
+        assert_eq!(rate, 0);
+    }
+
+    #[test]
+    fn test_rate_of_change_from_zero() {
+        let rate = rate_of_change(0, 500).unwrap();
+        assert_eq!(rate, BPS_SCALE as i64);
+    }
+
+    #[test]
+    fn test_rate_of_change_both_zero() {
+        let rate = rate_of_change(0, 0).unwrap();
+        assert_eq!(rate, 0);
+    }
+
+    #[test]
+    fn test_ema_full_weight_current() {
+        let ema = exponential_moving_average(5000, 8000, 10000).unwrap();
+        assert_eq!(ema, 8000); // alpha=100% => pure current value
+    }
+
+    #[test]
