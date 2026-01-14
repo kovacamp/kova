@@ -378,3 +378,86 @@ mod tests {
     }
 
     #[test]
+    fn test_ema_full_weight_previous() {
+        let ema = exponential_moving_average(5000, 8000, 0).unwrap();
+        assert_eq!(ema, 5000); // alpha=0% => pure previous value
+    }
+
+    #[test]
+    fn test_ema_half_weight() {
+        let ema = exponential_moving_average(4000, 6000, 5000).unwrap();
+        // (6000 * 5000 + 4000 * 5000) / 10000 = 50_000_000 / 10000 = 5000
+        assert_eq!(ema, 5000);
+    }
+
+    #[test]
+    fn test_ema_invalid_alpha() {
+        assert!(exponential_moving_average(5000, 8000, 10001).is_none());
+    }
+
+    #[test]
+    fn test_z_score_above_mean() {
+        let z = z_score_normalize(150, 100, 25);
+        // (150 - 100) * PRECISION / 25 = 50 * PRECISION / 25 = 2 * PRECISION
+        assert_eq!(z, 2 * PRECISION as i128);
+    }
+
+    #[test]
+    fn test_z_score_below_mean() {
+        let z = z_score_normalize(50, 100, 25);
+        // (50 - 100) * PRECISION / 25 = -2 * PRECISION
+        assert_eq!(z, -2 * PRECISION as i128);
+    }
+
+    #[test]
+    fn test_z_score_at_mean() {
+        let z = z_score_normalize(100, 100, 25);
+        assert_eq!(z, 0);
+    }
+
+    #[test]
+    fn test_z_score_zero_std_dev() {
+        let z = z_score_normalize(150, 100, 0);
+        assert_eq!(z, 0);
+    }
+
+    #[test]
+    fn test_isqrt_perfect_square() {
+        assert_eq!(isqrt(144), 12);
+        assert_eq!(isqrt(10000), 100);
+        assert_eq!(isqrt(1), 1);
+        assert_eq!(isqrt(0), 0);
+    }
+
+    #[test]
+    fn test_isqrt_non_perfect() {
+        assert_eq!(isqrt(2), 1);
+        assert_eq!(isqrt(150), 12);
+    }
+
+    #[test]
+    fn test_std_deviation_basic() {
+        let values = vec![2, 4, 4, 4, 5, 5, 7, 9];
+        let std = std_deviation(&values).unwrap();
+        // Population variance = 4, sample variance = 4.57, sqrt ~= 2.14 => isqrt = 2
+        assert!(
+            std >= 1 && std <= 3,
+            "Std deviation should be ~2, got {}",
+            std
+        );
+    }
+
+    #[test]
+    fn test_std_deviation_constant() {
+        let values = vec![5, 5, 5, 5, 5];
+        let std = std_deviation(&values).unwrap();
+        assert_eq!(std, 0);
+    }
+
+    #[test]
+    fn test_std_deviation_single_value() {
+        let values = vec![42];
+        let std = std_deviation(&values).unwrap();
+        assert_eq!(std, 0);
+    }
+}
