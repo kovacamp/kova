@@ -7,6 +7,7 @@
 pub const BPS_SCALE: u64 = 10_000;
 
 /// Precision multiplier for intermediate calculations to avoid truncation.
+/// Precision multiplier for intermediate fixed-point calculations.
 const PRECISION: u128 = 1_000_000_000_000;
 
 /// Computes a weighted score from a set of sub-scores and their weights.
