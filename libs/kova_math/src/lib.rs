@@ -390,6 +390,7 @@ mod tests {
         assert_eq!(ema, 5000);
     }
 
+
     #[test]
     fn test_ema_invalid_alpha() {
         assert!(exponential_moving_average(5000, 8000, 10001).is_none());
