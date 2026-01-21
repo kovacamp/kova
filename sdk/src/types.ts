@@ -49,3 +49,27 @@ export interface ScoreResult {
   snapshotsUsed: number;
   /** Unix timestamp of the latest snapshot. */
   latestSnapshotAt: bigint;
+  /** Unix timestamp of when this score was computed. */
+  scoredAt: bigint;
+}
+
+/** Probability distribution across token outcome categories. */
+export interface ProbabilityDistribution {
+  /** Probability of death before graduation (bps). */
+  deathBps: number;
+  /** Probability of reaching 100K+ market cap (bps). */
+  reach100kBps: number;
+  /** Probability of reaching 300K+ as a runner (bps). */
+  reach300kBps: number;
+  /** Probability of reaching 1M+ mega run (bps). */
+  reach1mBps: number;
+}
+
+/** A signal extracted from metric analysis (warning or positive indicator). */
+export interface Signal {
+  /** Signal type: "warning" for red flags, "positive" for green flags. */
+  type: "warning" | "positive";
+  /** Human-readable description of the signal. */
+  message: string;
+  /** The metric key that triggered this signal. */
+  metricKey: string;
