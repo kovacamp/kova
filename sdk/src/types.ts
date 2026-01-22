@@ -117,3 +117,87 @@ export interface InitializeParams {
 }
 
 /** Parameters for the record_snapshot instruction. */
+export interface RecordSnapshotParams {
+  tokenMint: PublicKey;
+  metrics: TokenMetrics;
+}
+
+/** Parameters for the update_config instruction. */
+export interface UpdateConfigParams {
+  newWeights: ScoringWeights | null;
+  newMinInterval: bigint | null;
+}
+
+/** Type guard: checks if a value is a valid ScoreTier. */
+export function isScoreTier(value: unknown): value is ScoreTier {
+  return (
+    typeof value === "number" &&
+    Number.isInteger(value) &&
+    value >= ScoreTier.Critical &&
+    value <= ScoreTier.Healthy
+  );
+}
+
+/** Type guard: validates a TokenMetrics object has all required fields in range. */
+export function isValidTokenMetrics(value: unknown): value is TokenMetrics {
+  if (typeof value !== "object" || value === null) return false;
+
+  const m = value as Record<string, unknown>;
+
+  if (typeof m.freshWalletBps !== "number" || m.freshWalletBps < 0 || m.freshWalletBps > 10000)
+    return false;
+  if (typeof m.bundlerBps !== "number" || m.bundlerBps < 0 || m.bundlerBps > 10000) return false;
+  if (typeof m.top10HolderBps !== "number" || m.top10HolderBps < 0 || m.top10HolderBps > 10000)
+    return false;
+  if (typeof m.smartMoneyCount !== "number" || m.smartMoneyCount < 0) return false;
+  if (typeof m.devHoldingsBps !== "number" || m.devHoldingsBps < 0 || m.devHoldingsBps > 10000)
+    return false;
+  if (typeof m.lpLocked !== "boolean") return false;
+  if (typeof m.mintRevoked !== "boolean") return false;
+  if (typeof m.holderCount !== "number" || m.holderCount < 0) return false;
+  if (typeof m.volumeTrendUp !== "boolean") return false;
+
+  return true;
+}
+
+/** Determines the ScoreTier for a given score value (0-100). */
+export function tierFromScore(score: number): ScoreTier {
+  if (score < 20) return ScoreTier.Critical;
+  if (score < 40) return ScoreTier.Dangerous;
+  if (score < 60) return ScoreTier.Caution;
+  if (score < 80) return ScoreTier.Moderate;
+  return ScoreTier.Healthy;
+}
+
+/** Returns a human-readable label for a ScoreTier. */
+export function tierLabel(tier: ScoreTier): string {
+  switch (tier) {
+    case ScoreTier.Critical:
+      return "Critical";
+    case ScoreTier.Dangerous:
+      return "Dangerous";
+    case ScoreTier.Caution:
+      return "Caution";
+    case ScoreTier.Moderate:
+      return "Moderate";
+    case ScoreTier.Healthy:
+      return "Healthy";
+  }
+}
+
+/** Validates that scoring weights sum to exactly 10000. */
+export function validateWeights(weights: ScoringWeights): boolean {
+  const sum =
+    weights.freshWalletWeight +
+    weights.bundlerWeight +
+    weights.top10HolderWeight +
+    weights.smartMoneyWeight +
+    weights.devHoldingsWeight +
+    weights.lpLockedWeight +
+    weights.mintRevokedWeight +
+    weights.volumeTrendWeight +
+    weights.freshSlopeWeight +
+    weights.top10SlopeWeight;
+
+  return sum === 10_000;
+}
