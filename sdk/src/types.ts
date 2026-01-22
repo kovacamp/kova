@@ -73,3 +73,47 @@ export interface Signal {
   message: string;
   /** The metric key that triggered this signal. */
   metricKey: string;
+  /** The metric value that triggered this signal. */
+  metricValue: number;
+}
+
+/** A single point in a time-series data feed. */
+export interface TimeSeriesPoint {
+  /** Unix timestamp in milliseconds. */
+  timestamp: number;
+  /** The metric value at this timestamp. */
+  value: number;
+}
+
+/** Scoring weights configuration matching the on-chain ScoringWeights struct. */
+export interface ScoringWeights {
+  freshWalletWeight: number;
+  bundlerWeight: number;
+  top10HolderWeight: number;
+  smartMoneyWeight: number;
+  devHoldingsWeight: number;
+  lpLockedWeight: number;
+  mintRevokedWeight: number;
+  volumeTrendWeight: number;
+  freshSlopeWeight: number;
+  top10SlopeWeight: number;
+}
+
+/** Deserialized TokenScanConfig account data. */
+export interface TokenScanConfig {
+  authority: PublicKey;
+  weights: ScoringWeights;
+  totalSnapshotsRecorded: bigint;
+  totalScoresCalculated: bigint;
+  minSnapshotIntervalSecs: bigint;
+  lastUpdatedAt: bigint;
+  bump: number;
+}
+
+/** Parameters for the initialize instruction. */
+export interface InitializeParams {
+  scoringWeights: ScoringWeights;
+  minSnapshotIntervalSecs: bigint;
+}
+
+/** Parameters for the record_snapshot instruction. */
