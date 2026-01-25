@@ -30,3 +30,35 @@ export const DISCRIMINATOR_LENGTH = 8;
 export const SCAN_CONFIG_SPACE = DISCRIMINATOR_LENGTH + 32 + 20 + 8 + 8 + 8 + 8 + 1;
 
 /** TokenSnapshot account space in bytes. */
+export const TOKEN_SNAPSHOT_SPACE = DISCRIMINATOR_LENGTH + 32 + 4 + 33 + 8 + 32 + 1;
+
+/** ScanRecord account space in bytes. */
+export const SCAN_RECORD_SPACE = DISCRIMINATOR_LENGTH + 32 + 1 + 1 + 2 + 2 + 2 + 2 + 4 + 8 + 8 + 1;
+
+/** Default scoring weights matching the concept document (v1 heuristic). */
+export const DEFAULT_SCORING_WEIGHTS = {
+  freshWalletWeight: 1500,
+  bundlerWeight: 1500,
+  top10HolderWeight: 1000,
+  smartMoneyWeight: 1000,
+  devHoldingsWeight: 1000,
+  lpLockedWeight: 800,
+  mintRevokedWeight: 800,
+  volumeTrendWeight: 700,
+  freshSlopeWeight: 850,
+  top10SlopeWeight: 850,
+} as const;
+
+/** Score tier thresholds. */
+export const TIER_THRESHOLDS = {
+  CRITICAL_MAX: 19,
+  DANGEROUS_MAX: 39,
+  CAUTION_MAX: 59,
+  MODERATE_MAX: 79,
+} as const;
+
+/** Minimum snapshot interval in seconds. */
+export const MIN_SNAPSHOT_INTERVAL_SECS = 1;
+
+/** Smart money cap for normalization (20 entries = max sub-score). */
+export const SMART_MONEY_CAP = 20;
