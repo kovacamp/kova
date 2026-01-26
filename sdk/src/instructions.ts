@@ -169,3 +169,70 @@ export function buildRecordSnapshotInstruction(
     data,
   });
 }
+
+/** Builds the calculate_score instruction. */
+export function buildCalculateScoreInstruction(
+  operator: PublicKey,
+  tokenMint: PublicKey,
+  latestSnapshotIndex: number
+): TransactionInstruction {
+  const [configPda] = deriveConfigPda();
+  const [scanRecordPda] = deriveScanRecordPda(tokenMint);
+  const [snapshotPda] = deriveSnapshotPda(tokenMint, latestSnapshotIndex);
+
+  const data = Buffer.alloc(8);
+  CALCULATE_SCORE_DISCRIMINATOR.copy(data, 0);
+
+  return new TransactionInstruction({
+    programId: KOVA_PROGRAM_ID,
+    keys: [
+      { pubkey: operator, isSigner: true, isWritable: true },
+      { pubkey: configPda, isSigner: false, isWritable: true },
+      { pubkey: scanRecordPda, isSigner: false, isWritable: true },
+      { pubkey: snapshotPda, isSigner: false, isWritable: false },
+    ],
+    data,
+  });
+}
+
+/** Builds the update_config instruction. */
+export function buildUpdateConfigInstruction(
+  authority: PublicKey,
+  params: UpdateConfigParams
+): TransactionInstruction {
+  const [configPda] = deriveConfigPda();
+
+  // Option<ScoringWeights> = 1 + 20, Option<i64> = 1 + 8
+  const data = Buffer.alloc(8 + 21 + 9);
+  let offset = 0;
+
+  UPDATE_CONFIG_DISCRIMINATOR.copy(data, offset);
+  offset += 8;
+
+  if (params.newWeights !== null) {
+    data.writeUInt8(1, offset);
+    offset += 1;
+    encodeWeights(params.newWeights).copy(data, offset);
+    offset += 20;
+  } else {
+    data.writeUInt8(0, offset);
+    offset += 21;
+  }
+
+  if (params.newMinInterval !== null) {
+    data.writeUInt8(1, offset);
+    offset += 1;
+    data.writeBigInt64LE(params.newMinInterval, offset);
+  } else {
+    data.writeUInt8(0, offset);
+  }
+
+  return new TransactionInstruction({
+    programId: KOVA_PROGRAM_ID,
+    keys: [
+      { pubkey: authority, isSigner: true, isWritable: false },
+      { pubkey: configPda, isSigner: false, isWritable: true },
+    ],
+    data,
+  });
+}
