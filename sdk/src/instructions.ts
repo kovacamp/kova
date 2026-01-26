@@ -45,3 +45,40 @@ export function deriveConfigPda(): [PublicKey, number] {
 }
 
 /** Derives the ScanRecord PDA address for a given token mint. */
+export function deriveScanRecordPda(
+  tokenMint: PublicKey
+): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [SCAN_RECORD_SEED, tokenMint.toBuffer()],
+    KOVA_PROGRAM_ID
+  );
+}
+
+/** Derives the TokenSnapshot PDA address. */
+export function deriveSnapshotPda(
+  tokenMint: PublicKey,
+  snapshotIndex: number
+): [PublicKey, number] {
+  const indexBuffer = Buffer.alloc(4);
+  indexBuffer.writeUInt32LE(snapshotIndex, 0);
+  return PublicKey.findProgramAddressSync(
+    [TOKEN_SNAPSHOT_SEED, tokenMint.toBuffer(), indexBuffer],
+    KOVA_PROGRAM_ID
+  );
+}
+
+/** Encodes ScoringWeights into a buffer (10 x u16 = 20 bytes). */
+function encodeWeights(weights: ScoringWeights): Buffer {
+  const buf = Buffer.alloc(20);
+  buf.writeUInt16LE(weights.freshWalletWeight, 0);
+  buf.writeUInt16LE(weights.bundlerWeight, 2);
+  buf.writeUInt16LE(weights.top10HolderWeight, 4);
+  buf.writeUInt16LE(weights.smartMoneyWeight, 6);
+  buf.writeUInt16LE(weights.devHoldingsWeight, 8);
+  buf.writeUInt16LE(weights.lpLockedWeight, 10);
+  buf.writeUInt16LE(weights.mintRevokedWeight, 12);
+  buf.writeUInt16LE(weights.volumeTrendWeight, 14);
+  buf.writeUInt16LE(weights.freshSlopeWeight, 16);
+  buf.writeUInt16LE(weights.top10SlopeWeight, 18);
+  return buf;
+}
