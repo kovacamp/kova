@@ -30,3 +30,18 @@ const RECORD_SNAPSHOT_DISCRIMINATOR = Buffer.from([
 const CALCULATE_SCORE_DISCRIMINATOR = Buffer.from([
   199, 42, 116, 248, 91, 63, 207, 14,
 ]);
+
+/** Anchor instruction discriminator: sha256("global:update_config")[0..8] */
+const UPDATE_CONFIG_DISCRIMINATOR = Buffer.from([
+  29, 158, 252, 191, 10, 83, 219, 99,
+]);
+
+/** Derives the TokenScanConfig PDA address. */
+export function deriveConfigPda(): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [SCAN_CONFIG_SEED],
+    KOVA_PROGRAM_ID
+  );
+}
+
+/** Derives the ScanRecord PDA address for a given token mint. */
