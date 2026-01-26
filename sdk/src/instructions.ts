@@ -82,3 +82,90 @@ function encodeWeights(weights: ScoringWeights): Buffer {
   buf.writeUInt16LE(weights.top10SlopeWeight, 18);
   return buf;
 }
+
+/** Builds the initialize instruction. */
+export function buildInitializeInstruction(
+  authority: PublicKey,
+  params: InitializeParams
+): TransactionInstruction {
+  const [configPda] = deriveConfigPda();
+
+  // 8 (disc) + 20 (weights) + 8 (interval) = 36
+  const data = Buffer.alloc(36);
+  let offset = 0;
+
+  INITIALIZE_DISCRIMINATOR.copy(data, offset);
+  offset += 8;
+
+  encodeWeights(params.scoringWeights).copy(data, offset);
+  offset += 20;
+
+  data.writeBigInt64LE(params.minSnapshotIntervalSecs, offset);
+
+  return new TransactionInstruction({
+    programId: KOVA_PROGRAM_ID,
+    keys: [
+      { pubkey: authority, isSigner: true, isWritable: true },
+      { pubkey: configPda, isSigner: false, isWritable: true },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    ],
+    data,
+  });
+}
+
+/** Builds the record_snapshot instruction. */
+export function buildRecordSnapshotInstruction(
+  recorder: PublicKey,
+  params: RecordSnapshotParams,
+  snapshotIndex: number
+): TransactionInstruction {
+  const [configPda] = deriveConfigPda();
+  const [scanRecordPda] = deriveScanRecordPda(params.tokenMint);
+  const [snapshotPda] = deriveSnapshotPda(params.tokenMint, snapshotIndex);
+
+  const m = params.metrics;
+
+  // 8 (disc) + 32 (token_mint) + metrics (2+2+2+2+2+1+1+8+8+4+1 = 33) = 73
+  const data = Buffer.alloc(73);
+  let offset = 0;
+
+  RECORD_SNAPSHOT_DISCRIMINATOR.copy(data, offset);
+  offset += 8;
+
+  params.tokenMint.toBuffer().copy(data, offset);
+  offset += 32;
+
+  data.writeUInt16LE(m.freshWalletBps, offset);
+  offset += 2;
+  data.writeUInt16LE(m.bundlerBps, offset);
+  offset += 2;
+  data.writeUInt16LE(m.top10HolderBps, offset);
+  offset += 2;
+  data.writeUInt16LE(m.smartMoneyCount, offset);
+  offset += 2;
+  data.writeUInt16LE(m.devHoldingsBps, offset);
+  offset += 2;
+  data.writeUInt8(m.lpLocked ? 1 : 0, offset);
+  offset += 1;
+  data.writeUInt8(m.mintRevoked ? 1 : 0, offset);
+  offset += 1;
+  data.writeBigUInt64LE(m.mcapLamports, offset);
+  offset += 8;
+  data.writeBigUInt64LE(m.volume1mLamports, offset);
+  offset += 8;
+  data.writeUInt32LE(m.holderCount, offset);
+  offset += 4;
+  data.writeUInt8(m.volumeTrendUp ? 1 : 0, offset);
+
+  return new TransactionInstruction({
+    programId: KOVA_PROGRAM_ID,
+    keys: [
+      { pubkey: recorder, isSigner: true, isWritable: true },
+      { pubkey: configPda, isSigner: false, isWritable: true },
+      { pubkey: scanRecordPda, isSigner: false, isWritable: true },
+      { pubkey: snapshotPda, isSigner: false, isWritable: true },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    ],
+    data,
+  });
+}
