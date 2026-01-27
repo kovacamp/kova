@@ -58,3 +58,27 @@ export class KovaRpcError extends Error {
 }
 
 /** Configuration for the KovaClient. */
+export interface KovaClientConfig {
+  rpcEndpoint: string;
+  commitment?: Commitment;
+}
+
+/**
+ * High-level client for interacting with the Kova Scanner program.
+ *
+ * Wraps instruction building, transaction assembly, scoring computation,
+ * and signal generation into a single ergonomic interface.
+ */
+export class KovaClient {
+  private readonly connection: Connection;
+  private readonly commitment: Commitment;
+
+  constructor(config: KovaClientConfig) {
+    this.commitment = config.commitment ?? "confirmed";
+    this.connection = new Connection(config.rpcEndpoint, this.commitment);
+  }
+
+  /** Returns the underlying Solana connection. */
+  getConnection(): Connection {
+    return this.connection;
+  }
