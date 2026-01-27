@@ -46,3 +46,15 @@ export class KovaValidationError extends Error {
     this.name = "KovaValidationError";
   }
 }
+
+/** Error thrown when an RPC call or transaction confirmation fails. */
+export class KovaRpcError extends Error {
+  public readonly cause: unknown;
+  constructor(message: string, cause?: unknown) {
+    super(message);
+    this.name = "KovaRpcError";
+    this.cause = cause;
+  }
+}
+
+/** Configuration for the KovaClient. */
