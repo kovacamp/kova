@@ -135,3 +135,84 @@ export class KovaClient {
     );
     return this.sendTransaction([operator], instruction);
   }
+
+  /** Updates the scanner config. Authority only. */
+  async updateConfig(
+    authority: Keypair,
+    params: UpdateConfigParams
+  ): Promise<string> {
+    if (params.newWeights !== null && !validateWeights(params.newWeights)) {
+      throw new KovaValidationError("Scoring weights must sum to 10000 bps");
+    }
+    if (
+      params.newMinInterval !== null &&
+      params.newMinInterval < BigInt(MIN_SNAPSHOT_INTERVAL_SECS)
+    ) {
+      throw new KovaValidationError(
+        `Snapshot interval must be at least ${MIN_SNAPSHOT_INTERVAL_SECS} second`
+      );
+    }
+
+    const instruction = buildUpdateConfigInstruction(
+      authority.publicKey,
+      params
+    );
+    return this.sendTransaction([authority], instruction);
+  }
+
+  /** Fetches and deserializes the TokenScanConfig account. */
+  async fetchConfig(): Promise<TokenScanConfig | null> {
+    const [configPda] = deriveConfigPda();
+    const accountInfo = await this.connection.getAccountInfo(configPda);
+    if (!accountInfo) return null;
+
+    return this.deserializeConfig(accountInfo.data);
+  }
+
+  /** Fetches and deserializes a ScanRecord account. */
+  async fetchScanRecord(tokenMint: PublicKey): Promise<ScoreResult | null> {
+    const [recordPda] = deriveScanRecordPda(tokenMint);
+    const accountInfo = await this.connection.getAccountInfo(recordPda);
+    if (!accountInfo) return null;
+
+    return this.deserializeScanRecord(accountInfo.data);
+  }
+
+  /**
+   * Computes a survival score from token metrics using the weighted scoring
+   * algorithm. Does not require an on-chain transaction -- runs entirely
+   * client-side for quick estimations.
+   */
+  computeScore(
+    metrics: TokenMetrics,
+    weights: ScoringWeights = DEFAULT_SCORING_WEIGHTS
+  ): { score: number; tier: ScoreTier; distribution: ProbabilityDistribution } {
+    const freshSub = BPS_SCALE - metrics.freshWalletBps;
+    const bundlerSub = BPS_SCALE - metrics.bundlerBps;
+    const top10Sub = BPS_SCALE - metrics.top10HolderBps;
+    const devSub = BPS_SCALE - metrics.devHoldingsBps;
+    const smartMoneySub = Math.min(metrics.smartMoneyCount, SMART_MONEY_CAP)
+      * (BPS_SCALE / SMART_MONEY_CAP);
+    const lpSub = metrics.lpLocked ? BPS_SCALE : 0;
+    const mintSub = metrics.mintRevoked ? BPS_SCALE : 0;
+    const volumeSub = metrics.volumeTrendUp ? BPS_SCALE : 0;
+
+    const weightedSum =
+      freshSub * weights.freshWalletWeight +
+      bundlerSub * weights.bundlerWeight +
+      top10Sub * weights.top10HolderWeight +
+      smartMoneySub * weights.smartMoneyWeight +
+      devSub * weights.devHoldingsWeight +
+      lpSub * weights.lpLockedWeight +
+      mintSub * weights.mintRevokedWeight +
+      volumeSub * weights.volumeTrendWeight +
+      freshSub * weights.freshSlopeWeight +
+      top10Sub * weights.top10SlopeWeight;
+
+    const scoreRaw = Math.floor(weightedSum / BPS_SCALE / 100);
+    const score = Math.min(scoreRaw, 100);
+    const tier = tierFromScore(score);
+    const distribution = this.computeDistribution(score);
+
+    return { score, tier, distribution };
+  }
