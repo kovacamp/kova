@@ -82,3 +82,56 @@ export class KovaClient {
   getConnection(): Connection {
     return this.connection;
   }
+
+  /** Initializes the scanner config. Must be called once by the authority. */
+  async initialize(
+    authority: Keypair,
+    params: InitializeParams
+  ): Promise<string> {
+    if (!validateWeights(params.scoringWeights)) {
+      throw new KovaValidationError("Scoring weights must sum to 10000 bps");
+    }
+    if (params.minSnapshotIntervalSecs < BigInt(MIN_SNAPSHOT_INTERVAL_SECS)) {
+      throw new KovaValidationError(
+        `Snapshot interval must be at least ${MIN_SNAPSHOT_INTERVAL_SECS} second`
+      );
+    }
+
+    const instruction = buildInitializeInstruction(
+      authority.publicKey,
+      params
+    );
+    return this.sendTransaction([authority], instruction);
+  }
+
+  /** Records a token metric snapshot. Authority only. */
+  async recordSnapshot(
+    recorder: Keypair,
+    params: RecordSnapshotParams,
+    snapshotIndex: number
+  ): Promise<string> {
+    if (!isValidTokenMetrics(params.metrics)) {
+      throw new KovaValidationError("Invalid token metrics");
+    }
+
+    const instruction = buildRecordSnapshotInstruction(
+      recorder.publicKey,
+      params,
+      snapshotIndex
+    );
+    return this.sendTransaction([recorder], instruction);
+  }
+
+  /** Triggers score calculation for a token. */
+  async calculateScore(
+    operator: Keypair,
+    tokenMint: PublicKey,
+    latestSnapshotIndex: number
+  ): Promise<string> {
+    const instruction = buildCalculateScoreInstruction(
+      operator.publicKey,
+      tokenMint,
+      latestSnapshotIndex
+    );
+    return this.sendTransaction([operator], instruction);
+  }
