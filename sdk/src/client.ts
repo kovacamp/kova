@@ -216,3 +216,230 @@ export class KovaClient {
 
     return { score, tier, distribution };
   }
+
+  /** Generates signals (warnings and positive indicators) from token metrics. */
+  generateSignals(metrics: TokenMetrics): Signal[] {
+    const signals: Signal[] = [];
+
+    if (metrics.freshWalletBps > 5000) {
+      signals.push({
+        type: "warning",
+        message: `Fresh wallet ${(metrics.freshWalletBps / 100).toFixed(0)}%`,
+        metricKey: "freshWalletBps",
+        metricValue: metrics.freshWalletBps,
+      });
+    }
+
+    if (metrics.bundlerBps > 2000) {
+      signals.push({
+        type: "warning",
+        message: `Bundler ratio ${(metrics.bundlerBps / 100).toFixed(0)}%`,
+        metricKey: "bundlerBps",
+        metricValue: metrics.bundlerBps,
+      });
+    }
+
+    if (metrics.top10HolderBps > 5000) {
+      signals.push({
+        type: "warning",
+        message: `Top 10 holds ${(metrics.top10HolderBps / 100).toFixed(0)}%`,
+        metricKey: "top10HolderBps",
+        metricValue: metrics.top10HolderBps,
+      });
+    }
+
+    if (metrics.devHoldingsBps > 500) {
+      signals.push({
+        type: "warning",
+        message: `Dev still holds ${(metrics.devHoldingsBps / 100).toFixed(1)}%`,
+        metricKey: "devHoldingsBps",
+        metricValue: metrics.devHoldingsBps,
+      });
+    }
+
+    if (metrics.smartMoneyCount > 0) {
+      signals.push({
+        type: "positive",
+        message: `Smart money: ${metrics.smartMoneyCount} entered`,
+        metricKey: "smartMoneyCount",
+        metricValue: metrics.smartMoneyCount,
+      });
+    }
+
+    if (metrics.lpLocked) {
+      signals.push({
+        type: "positive",
+        message: "LP burned/locked",
+        metricKey: "lpLocked",
+        metricValue: 1,
+      });
+    }
+
+    if (metrics.mintRevoked) {
+      signals.push({
+        type: "positive",
+        message: "Mint authority revoked",
+        metricKey: "mintRevoked",
+        metricValue: 1,
+      });
+    }
+
+    if (!metrics.mintRevoked) {
+      signals.push({
+        type: "warning",
+        message: "Mint authority NOT revoked",
+        metricKey: "mintRevoked",
+        metricValue: 0,
+      });
+    }
+
+    if (metrics.volumeTrendUp) {
+      signals.push({
+        type: "positive",
+        message: "Volume trending up",
+        metricKey: "volumeTrendUp",
+        metricValue: 1,
+      });
+    }
+
+    return signals;
+  }
+
+  /** Computes the probability distribution for a given score. */
+  private computeDistribution(score: number): ProbabilityDistribution {
+    const s = score;
+    const deathRaw = Math.max(0, 9500 - s * 80);
+    const reach100kRaw = Math.min(s * 30, 2500);
+    const reach300kRaw = Math.min(Math.max(0, (s - 40) * 20), 1500);
+    const allocated = deathRaw + reach100kRaw + reach300kRaw;
+    const reach1mRaw = BPS_SCALE - allocated;
+    const total = deathRaw + reach100kRaw + reach300kRaw + reach1mRaw;
+    const deathBps = deathRaw + (BPS_SCALE - total);
+
+    return {
+      deathBps,
+      reach100kBps: reach100kRaw,
+      reach300kBps: reach300kRaw,
+      reach1mBps: reach1mRaw,
+    };
+  }
+
+  /** Assembles, signs, and sends a transaction with a single instruction. */
+  private async sendTransaction(
+    signers: Keypair[],
+    ...instructions: TransactionInstruction[]
+  ): Promise<string> {
+    const transaction = new Transaction();
+    for (const ix of instructions) {
+      transaction.add(ix);
+    }
+
+    try {
+      const signature = await sendAndConfirmTransaction(
+        this.connection,
+        transaction,
+        signers,
+        { commitment: this.commitment }
+      );
+      return signature;
+    } catch (err) {
+      throw new KovaRpcError("Transaction failed", err);
+    }
+  }
+
+  /** Deserializes raw account data into a TokenScanConfig. */
+  private deserializeConfig(data: Buffer): TokenScanConfig {
+    let offset = 8; // skip discriminator
+
+    const authority = new PublicKey(data.subarray(offset, offset + 32));
+    offset += 32;
+
+    const weights: ScoringWeights = {
+      freshWalletWeight: data.readUInt16LE(offset),
+      bundlerWeight: data.readUInt16LE(offset + 2),
+      top10HolderWeight: data.readUInt16LE(offset + 4),
+      smartMoneyWeight: data.readUInt16LE(offset + 6),
+      devHoldingsWeight: data.readUInt16LE(offset + 8),
+      lpLockedWeight: data.readUInt16LE(offset + 10),
+      mintRevokedWeight: data.readUInt16LE(offset + 12),
+      volumeTrendWeight: data.readUInt16LE(offset + 14),
+      freshSlopeWeight: data.readUInt16LE(offset + 16),
+      top10SlopeWeight: data.readUInt16LE(offset + 18),
+    };
+    offset += 20;
+
+    const totalSnapshotsRecorded = data.readBigUInt64LE(offset);
+    offset += 8;
+
+    const totalScoresCalculated = data.readBigUInt64LE(offset);
+    offset += 8;
+
+    const minSnapshotIntervalSecs = data.readBigInt64LE(offset);
+    offset += 8;
+
+    const lastUpdatedAt = data.readBigInt64LE(offset);
+    offset += 8;
+
+    const bump = data.readUInt8(offset);
+
+    return {
+      authority,
+      weights,
+      totalSnapshotsRecorded,
+      totalScoresCalculated,
+      minSnapshotIntervalSecs,
+      lastUpdatedAt,
+      bump,
+    };
+  }
+
+  /** Deserializes raw account data into a ScoreResult. */
+  private deserializeScanRecord(data: Buffer): ScoreResult {
+    let offset = 8; // skip discriminator
+
+    const tokenMint = new PublicKey(data.subarray(offset, offset + 32));
+    offset += 32;
+
+    const score = data.readUInt8(offset);
+    offset += 1;
+
+    const tierByte = data.readUInt8(offset);
+    const tier: ScoreTier = tierByte;
+    offset += 1;
+
+    const probDeathBps = data.readUInt16LE(offset);
+    offset += 2;
+
+    const prob100kBps = data.readUInt16LE(offset);
+    offset += 2;
+
+    const prob300kBps = data.readUInt16LE(offset);
+    offset += 2;
+
+    const prob1mBps = data.readUInt16LE(offset);
+    offset += 2;
+
+    const snapshotsUsed = data.readUInt32LE(offset);
+    offset += 4;
+
+    const latestSnapshotAt = data.readBigInt64LE(offset);
+    offset += 8;
+
+    const scoredAt = data.readBigInt64LE(offset);
+
+    return {
+      tokenMint,
+      score,
+      tier,
+      distribution: {
+        deathBps: probDeathBps,
+        reach100kBps: prob100kBps,
+        reach300kBps: prob300kBps,
+        reach1mBps: prob1mBps,
+      },
+      snapshotsUsed,
+      latestSnapshotAt,
+      scoredAt,
+    };
+  }
+}
