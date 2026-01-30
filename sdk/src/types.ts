@@ -128,7 +128,8 @@ export interface UpdateConfigParams {
   newMinInterval: bigint | null;
 }
 
-/** Type guard: checks if a value is a valid ScoreTier. */
+/**
+ * Type guard: checks if a value is a valid ScoreTier. */
 export function isScoreTier(value: unknown): value is ScoreTier {
   return (
     typeof value === "number" &&
@@ -138,7 +139,8 @@ export function isScoreTier(value: unknown): value is ScoreTier {
   );
 }
 
-/** Type guard: validates a TokenMetrics object has all required fields in range. */
+/**
+ * Type guard: validates a TokenMetrics object has all required fields in range. */
 export function isValidTokenMetrics(value: unknown): value is TokenMetrics {
   if (typeof value !== "object" || value === null) return false;
 
