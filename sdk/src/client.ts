@@ -73,7 +73,6 @@ export class KovaClient {
   private readonly connection: Connection;
   private readonly commitment: Commitment;
 
-  /** Creates a new KovaClient instance. */
   constructor(config: KovaClientConfig) {
     this.commitment = config.commitment ?? "confirmed";
     this.connection = new Connection(config.rpcEndpoint, this.commitment);
