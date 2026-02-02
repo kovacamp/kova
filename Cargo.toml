@@ -2,6 +2,7 @@
 members = [
     "programs/kova_scanner",
     "libs/kova_math",
+    "cli",
 ]
 resolver = "2"
 
@@ -9,7 +10,6 @@ resolver = "2"
 anchor-lang = "0.29.0"
 anchor-spl = "0.29.0"
 solana-program = "=1.17.0"
-
 kova-math = { path = "libs/kova_math" }
 
 [profile.release]
