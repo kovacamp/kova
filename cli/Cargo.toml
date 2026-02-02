@@ -1,0 +1,17 @@
+[package]
+name = "kova-cli"
+version = "0.1.0"
+description = "Command-line interface for the Kova token survival scanner"
+edition = "2021"
+license = "MIT"
+
+[[bin]]
+name = "kova"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4.4", features = ["derive"] }
+solana-sdk = "=1.17.0"
+solana-client = "=1.17.0"
+kova-math = { path = "../libs/kova_math" }
+bs58 = "0.5"
