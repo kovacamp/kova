@@ -24,3 +24,8 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Scan a token by contract address and compute survival probability
+    Scan {
+        /// Token contract address (base58)
+        #[arg(long)]
+        ca: String,
