@@ -29,3 +29,11 @@ enum Commands {
         /// Token contract address (base58)
         #[arg(long)]
         ca: String,
+
+        /// Number of metric dimensions to display
+        #[arg(long, default_value = "10")]
+        detail_level: u8,
+    },
+
+    /// Monitor a token with periodic score updates
+    Monitor {
