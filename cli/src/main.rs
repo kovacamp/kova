@@ -37,3 +37,11 @@ enum Commands {
 
     /// Monitor a token with periodic score updates
     Monitor {
+        /// Token contract address (base58)
+        #[arg(long)]
+        ca: String,
+
+        /// Polling interval in seconds
+        #[arg(long, default_value = "5")]
+        interval: u64,
+    },
