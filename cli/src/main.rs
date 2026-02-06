@@ -45,3 +45,10 @@ enum Commands {
         #[arg(long, default_value = "5")]
         interval: u64,
     },
+
+    /// Show recent token deaths (rugs, instant deaths, failed launches)
+    Graveyard {
+        /// Number of recent deaths to display
+        #[arg(long, default_value = "20")]
+        limit: u32,
+    },
