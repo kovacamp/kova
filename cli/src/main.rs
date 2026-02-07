@@ -52,3 +52,11 @@ enum Commands {
         #[arg(long, default_value = "20")]
         limit: u32,
     },
+
+    /// Display scanner statistics and config
+    Stats {
+        /// Optional token address to inspect a specific scan record
+        #[arg(long)]
+        token: Option<String>,
+    },
+}
