@@ -4,6 +4,7 @@ use solana_sdk::pubkey::Pubkey;
 use std::str::FromStr;
 
 const PROGRAM_ID: &str = "KovA5cAnNeR7xQwK8rY2NjmEv3bUnDL4sHfT9pRs1Wz";
+/// Default Solana RPC endpoint.
 const DEFAULT_RPC: &str = "https://api.mainnet-beta.solana.com";
 
 #[derive(Parser)]
