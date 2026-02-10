@@ -62,3 +62,30 @@ describe("ScoreTier", () => {
     });
   });
 });
+
+describe("Type Guards", () => {
+  describe("isScoreTier", () => {
+    it("accepts valid tier values", () => {
+      expect(isScoreTier(0)).toBe(true);
+      expect(isScoreTier(1)).toBe(true);
+      expect(isScoreTier(2)).toBe(true);
+      expect(isScoreTier(3)).toBe(true);
+      expect(isScoreTier(4)).toBe(true);
+    });
+
+    it("rejects out-of-range numbers", () => {
+      expect(isScoreTier(-1)).toBe(false);
+      expect(isScoreTier(5)).toBe(false);
+      expect(isScoreTier(100)).toBe(false);
+    });
+
+    it("rejects non-number types", () => {
+      expect(isScoreTier("Critical")).toBe(false);
+      expect(isScoreTier(null)).toBe(false);
+      expect(isScoreTier(undefined)).toBe(false);
+    });
+
+    it("rejects floating-point numbers", () => {
+      expect(isScoreTier(1.5)).toBe(false);
+    });
+  });
