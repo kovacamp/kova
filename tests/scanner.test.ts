@@ -89,3 +89,60 @@ describe("Type Guards", () => {
       expect(isScoreTier(1.5)).toBe(false);
     });
   });
+
+  describe("isValidTokenMetrics", () => {
+    const validMetrics = {
+      freshWalletBps: 5400,
+      bundlerBps: 2800,
+      top10HolderBps: 4300,
+      smartMoneyCount: 2,
+      devHoldingsBps: 800,
+      lpLocked: false,
+      mintRevoked: true,
+      mcapLamports: 50_000_000_000n,
+      volume1mLamports: 1_000_000_000n,
+      holderCount: 150,
+      volumeTrendUp: true,
+    };
+
+    it("accepts valid metrics", () => {
+      expect(isValidTokenMetrics(validMetrics)).toBe(true);
+    });
+
+    it("rejects metrics with out-of-range bps", () => {
+      expect(
+        isValidTokenMetrics({ ...validMetrics, freshWalletBps: 10001 })
+      ).toBe(false);
+    });
+
+    it("rejects metrics with wrong boolean type", () => {
+      expect(
+        isValidTokenMetrics({ ...validMetrics, lpLocked: 1 })
+      ).toBe(false);
+    });
+
+    it("rejects null", () => {
+      expect(isValidTokenMetrics(null)).toBe(false);
+    });
+
+    it("rejects missing fields", () => {
+      expect(isValidTokenMetrics({ freshWalletBps: 5000 })).toBe(false);
+    });
+  });
+});
+
+describe("Scoring Weights Validation", () => {
+  it("validates default weights sum to 10000", () => {
+    expect(validateWeights(DEFAULT_SCORING_WEIGHTS)).toBe(true);
+  });
+
+  it("rejects weights that do not sum to 10000", () => {
+    const badWeights = { ...DEFAULT_SCORING_WEIGHTS, freshWalletWeight: 9999 };
+    expect(validateWeights(badWeights)).toBe(false);
+  });
+
+  it("rejects weights that sum to more than 10000", () => {
+    const over = { ...DEFAULT_SCORING_WEIGHTS, freshWalletWeight: 2000 };
+    expect(validateWeights(over)).toBe(false);
+  });
+});
