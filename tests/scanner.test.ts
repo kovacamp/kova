@@ -146,3 +146,77 @@ describe("Scoring Weights Validation", () => {
     expect(validateWeights(over)).toBe(false);
   });
 });
+
+describe("PDA Derivation", () => {
+  it("derives deterministic config PDA", () => {
+    const [pda1, bump1] = deriveConfigPda();
+    const [pda2, bump2] = deriveConfigPda();
+
+    expect(pda1.equals(pda2)).toBe(true);
+    expect(bump1).toBe(bump2);
+  });
+
+  it("derives different scan record PDAs for different tokens", () => {
+    const mintA = Keypair.generate().publicKey;
+    const mintB = Keypair.generate().publicKey;
+
+    const [pdaA] = deriveScanRecordPda(mintA);
+    const [pdaB] = deriveScanRecordPda(mintB);
+
+    expect(pdaA.equals(pdaB)).toBe(false);
+  });
+
+  it("derives different snapshot PDAs for different indices", () => {
+    const mint = Keypair.generate().publicKey;
+
+    const [pdaA] = deriveSnapshotPda(mint, 0);
+    const [pdaB] = deriveSnapshotPda(mint, 1);
+
+    expect(pdaA.equals(pdaB)).toBe(false);
+  });
+
+  it("derives different snapshot PDAs for different tokens at same index", () => {
+    const mintA = Keypair.generate().publicKey;
+    const mintB = Keypair.generate().publicKey;
+
+    const [pdaA] = deriveSnapshotPda(mintA, 0);
+    const [pdaB] = deriveSnapshotPda(mintB, 0);
+
+    expect(pdaA.equals(pdaB)).toBe(false);
+  });
+});
+
+describe("Constants", () => {
+  it("program ID is a valid base58 public key", () => {
+    expect(() => new PublicKey(KOVA_PROGRAM_ID.toBase58())).not.toThrow();
+  });
+
+  it("BPS_SCALE is 10000", () => {
+    expect(BPS_SCALE).toBe(10_000);
+  });
+
+  it("account space calculations are positive", () => {
+    expect(SCAN_CONFIG_SPACE).toBeGreaterThan(8);
+    expect(SCAN_RECORD_SPACE).toBeGreaterThan(8);
+    expect(TOKEN_SNAPSHOT_SPACE).toBeGreaterThan(8);
+  });
+
+  it("tier thresholds are in ascending order", () => {
+    expect(TIER_THRESHOLDS.CRITICAL_MAX).toBeLessThan(TIER_THRESHOLDS.DANGEROUS_MAX);
+    expect(TIER_THRESHOLDS.DANGEROUS_MAX).toBeLessThan(TIER_THRESHOLDS.CAUTION_MAX);
+    expect(TIER_THRESHOLDS.CAUTION_MAX).toBeLessThan(TIER_THRESHOLDS.MODERATE_MAX);
+  });
+});
+
+describe("KovaValidationError", () => {
+  it("has the correct error name", () => {
+    const err = new KovaValidationError("test");
+    expect(err.name).toBe("KovaValidationError");
+    expect(err.message).toBe("test");
+  });
+
+  it("is an instance of Error", () => {
+    const err = new KovaValidationError("test");
+    expect(err).toBeInstanceOf(Error);
+  });
+});
