@@ -13,3 +13,7 @@ import {
   buildUpdateConfigInstruction,
 } from "../sdk/src/instructions";
 import type { TokenMetrics } from "../sdk/src";
+
+describe("Instruction Builders", () => {
+  const authority = Keypair.generate();
+  const tokenMint = Keypair.generate().publicKey;
