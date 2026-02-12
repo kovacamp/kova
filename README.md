@@ -30,3 +30,24 @@ outcomes.
 
 Everything runs on integer arithmetic with overflow checks. No floating point
 anywhere in the stack.
+
+## Feature Engineering
+
+Kova evaluates tokens across **10 weighted sub-scores** derived from real-time
+on-chain metrics:
+
+| Factor | Direction | What It Measures |
+|--------|-----------|-----------------|
+| Fresh Wallet % | Inverse | Proportion of holders with new wallets |
+| Bundler % | Inverse | Proportion flagged as sniper/bundler activity |
+| Top 10 Holder % | Inverse | Concentration in the top 10 wallets |
+| Dev Holdings % | Inverse | Developer wallet retention |
+| Smart Money Count | Positive | Number of tracked smart-money wallets holding |
+| LP Locked | Positive | Whether liquidity pool is locked |
+| Mint Revoked | Positive | Whether mint authority is revoked |
+| Volume Trend | Positive | Directional volume movement |
+| Fresh Wallet Slope | Derived | Rate of change in fresh wallet concentration |
+| Top 10 Slope | Derived | Rate of change in top-holder concentration |
+
+Inverse factors penalize high values. Positive factors reward them. Derived
+factors track time-series momentum.
