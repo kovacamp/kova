@@ -101,3 +101,13 @@ graph TB
     CLI_MON --> |"RPC poll"| SCANREC
     CLI_SCAN --> |"local compute"| WS
 ```
+
+## Score Tiers
+
+| Score | Tier | Label |
+|-------|------|-------|
+| 0 -- 19 | Critical | Extreme risk |
+| 20 -- 39 | Dangerous | High risk |
+| 40 -- 59 | Caution | Moderate risk |
+| 60 -- 79 | Moderate | Lower risk |
+| 80 -- 100 | Healthy | Lowest observed risk |
