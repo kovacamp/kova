@@ -151,3 +151,47 @@ Death     17.4%  ████████▋
 300K      6.4%   ███▏
 1M+       54.6%  ███████████████████████████▎
 ```
+
+## Data Pipeline
+
+```mermaid
+flowchart TB
+    subgraph Input ["Raw Metrics"]
+        M1["Holder Distribution\n(fresh %, bundler %, top10 %)"]
+        M2["Token Config\n(LP locked, mint revoked, dev %)"]
+        M3["Market Activity\n(smart money count, volume trend)"]
+    end
+
+    VALIDATE["Metric Validation\n- Range check (0-10000 bps)\n- Boolean check (0 or 1)\n- Token mint validation"]
+
+    SNAPSHOT["TokenSnapshot PDA\n(immutable, sequential index)\n- 11 metric fields\n- timestamp + recorder"]
+
+    subgraph Scoring ["Score Computation"]
+        INVERT["Inverse Metrics\n10000 - value\n(fresh, bundler, top10, dev)"]
+        DIRECT["Positive Metrics\ndirect value\n(smart money, LP, mint, volume)"]
+        DERIVED["Derived Metrics\nslope proxies\n(fresh slope, top10 slope)"]
+    end
+
+    WEIGHTED["Weighted Sum\nsum(sub_score * weight) / weight_total\n-> normalized to 0-100"]
+
+    TIER["Tier Classification\nCritical | Dangerous | Caution\nModerate | Healthy"]
+
+    DIST["Probability Distribution\n4 buckets in basis points\nDeath | 100K | 300K | 1M+"]
+
+    RECORD["ScanRecord PDA\n- score (u8)\n- tier (enum)\n- distribution (4 x u16)\n- snapshots_used\n- timestamps"]
+
+    M1 --> VALIDATE
+    M2 --> VALIDATE
+    M3 --> VALIDATE
+    VALIDATE --> SNAPSHOT
+    SNAPSHOT --> INVERT
+    SNAPSHOT --> DIRECT
+    SNAPSHOT --> DERIVED
+    INVERT --> WEIGHTED
+    DIRECT --> WEIGHTED
+    DERIVED --> WEIGHTED
+    WEIGHTED --> TIER
+    WEIGHTED --> DIST
+    TIER --> RECORD
+    DIST --> RECORD
+```
