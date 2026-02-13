@@ -195,3 +195,156 @@ flowchart TB
     TIER --> RECORD
     DIST --> RECORD
 ```
+
+## Project Structure
+
+```
+kova-core/
+├── programs/
+│   └── kova_scanner/        # Anchor on-chain program
+│       └── src/
+│           ├── lib.rs            # Program entry, module declarations
+│           ├── state.rs          # Account structs (Config, Snapshot, Record)
+│           ├── errors.rs         # Error codes with messages
+│           ├── contexts.rs       # Anchor account validation contexts
+│           ├── utils.rs          # Scoring algorithm, PDA helpers, validation
+│           └── instructions/     # Instruction handlers
+│               ├── initialize.rs
+│               ├── record_snapshot.rs
+│               ├── calculate_score.rs
+│               └── update_config.rs
+├── libs/
+│   └── kova_math/            # Pure math library (no_std compatible)
+│       └── src/lib.rs            # Scoring, distributions, time-series stats
+├── sdk/
+│   └── src/                  # TypeScript SDK (@kova-protocol/sdk)
+│       ├── types.ts              # Type definitions and guards
+│       ├── constants.ts          # Program ID, seeds, default weights
+│       ├── instructions.ts       # PDA derivation and instruction builders
+│       ├── client.ts             # High-level KovaClient API
+│       └── index.ts              # Barrel exports
+├── cli/
+│   └── src/main.rs           # CLI tool (scan, monitor, graveyard, stats)
+├── tests/
+│   ├── scanner.test.ts           # Unit tests (tiers, types, weights)
+│   └── integration.test.ts       # Instruction builder tests
+└── .github/workflows/ci.yml     # Lint + Build + SDK type check
+```
+
+## Build
+
+### Requirements
+
+- Rust 1.75+
+- Solana CLI 1.17.0
+- Anchor CLI 0.29.0
+- Node.js 20+ (for SDK)
+
+### Commands
+
+```bash
+# Build the on-chain program
+anchor build
+
+# Run Rust tests (math + program utils)
+cargo test --workspace
+
+# Install SDK dependencies
+cd sdk && npm install
+
+# Type-check SDK
+cd sdk && npx tsc --noEmit
+
+# Run SDK tests
+cd tests && npx jest --config jest.config.js
+```
+
+## SDK Usage
+
+```typescript
+import {
+  KovaClient,
+  ScoreTier,
+  tierFromScore,
+  tierLabel,
+  DEFAULT_SCORING_WEIGHTS,
+} from "@kova-protocol/sdk";
+
+// Client-side score computation (no transaction needed)
+const client = new KovaClient({ rpcEndpoint: "https://api.devnet.solana.com" });
+
+const score = client.computeScore({
+  freshWalletBps: 2400,
+  bundlerBps: 800,
+  top10HolderBps: 3100,
+  smartMoneyCount: 3,
+  devHoldingsBps: 500,
+  lpLocked: true,
+  mintRevoked: true,
+  mcapLamports: 45_000_000_000n,
+  volume1mLamports: 12_000_000_000n,
+  holderCount: 840,
+  volumeTrendUp: true,
+});
+
+console.log(`Score: ${score.score} / 100`);
+console.log(`Tier: ${tierLabel(score.tier)}`);
+console.log(`Death probability: ${score.distribution.deathBps / 100}%`);
+
+// Generate actionable signals
+const signals = client.generateSignals(metrics);
+signals.forEach((s) => console.log(`[${s.type}] ${s.message}`));
+```
+
+## CLI Reference
+
+```bash
+# One-shot scan
+kova-cli scan --ca <TOKEN_ADDRESS>
+
+# Real-time monitoring (polls every 30s)
+kova-cli monitor --ca <TOKEN_ADDRESS> --interval 30
+
+# View scanner configuration
+kova-cli stats
+
+# Check specific token record
+kova-cli stats --token <TOKEN_ADDRESS>
+```
+
+## Signals
+
+The SDK generates contextual signals from raw metrics:
+
+| Signal | Type | Condition |
+|--------|------|-----------|
+| High fresh wallet concentration | Warning | freshWalletBps > 4000 |
+| Bundler activity detected | Warning | bundlerBps > 2000 |
+| Top 10 wallets hold majority | Warning | top10HolderBps > 5000 |
+| Large dev holdings | Warning | devHoldingsBps > 3000 |
+| Smart money present | Positive | smartMoneyCount >= 2 |
+| Liquidity pool locked | Positive | lpLocked = true |
+| Mint authority revoked | Positive | mintRevoked = true |
+| Volume trending up | Positive | volumeTrendUp = true |
+
+## Math Library
+
+`kova-math` provides integer-only primitives used by both the on-chain program
+and the CLI:
+
+| Function | Description |
+|----------|-------------|
+| `weighted_score` | Weighted average with u128 intermediate precision |
+| `probability_distribution` | Score to 4-bucket outcome mapper |
+| `time_series_slope` | Linear regression over observation series |
+| `rate_of_change` | Basis-point delta between two values |
+| `exponential_moving_average` | EMA with configurable alpha (in bps) |
+| `z_score_normalize` | Statistical normalization |
+| `std_deviation` | Sample standard deviation |
+| `isqrt` | Integer square root (Newton's method) |
+
+All functions use checked arithmetic and return `Option<T>` on overflow.
+
+## License
+
+MIT
