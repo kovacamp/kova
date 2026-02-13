@@ -51,3 +51,53 @@ on-chain metrics:
 
 Inverse factors penalize high values. Positive factors reward them. Derived
 factors track time-series momentum.
+
+## Architecture
+
+```mermaid
+graph TB
+    subgraph Program ["On-Chain Program &mdash; kova_scanner (Anchor)"]
+        ENTRY["Program Entry\nlib.rs"]
+        ENTRY --> INIT["initialize\n(setup global config)"]
+        ENTRY --> RECORD_S["record_snapshot\n(capture metrics)"]
+        ENTRY --> CALC["calculate_score\n(compute survival %)"]
+        ENTRY --> UPDATE["update_config\n(adjust weights)"]
+
+        INIT --> CONFIG["TokenScanConfig PDA\n(singleton, authority + weights)"]
+        RECORD_S --> SNAP["TokenSnapshot PDA\n(per-token, sequential index)"]
+        CALC --> SCANREC["ScanRecord PDA\n(per-token, score + distribution)"]
+        UPDATE --> CONFIG
+    end
+
+    subgraph Math ["kova-math (Rust, integer-only)"]
+        WS["weighted_score\n(10 sub-scores * weights)"]
+        PD["probability_distribution\n(score -> 4 outcome buckets)"]
+        SLOPE["time_series_slope\n(linear regression)"]
+        STAT["ema / z_score / std_dev\n(statistical primitives)"]
+        WS --> PD
+    end
+
+    subgraph SDK ["@kova-protocol/sdk (TypeScript)"]
+        TYPES["Types + Constants\n(ScoreTier, TokenMetrics, weights)"]
+        INSTR["Instruction Builders\n(PDA derivation + Borsh encoding)"]
+        CLIENT["KovaClient\n(high-level API)"]
+        SIGNALS["Signal Generation\n(warning / positive)"]
+        TYPES --> INSTR
+        INSTR --> CLIENT
+        SIGNALS --> CLIENT
+    end
+
+    subgraph CLI ["kova-cli (Rust)"]
+        CLI_SCAN["scan\n(one-shot token check)"]
+        CLI_MON["monitor\n(real-time polling)"]
+        CLI_GY["graveyard\n(dead token list)"]
+        CLI_STAT["stats\n(config diagnostics)"]
+    end
+
+    CALC --> |"calls"| WS
+    CALC --> |"calls"| PD
+    CLIENT --> |"build & send txs"| ENTRY
+    CLI_SCAN --> |"RPC read"| SCANREC
+    CLI_MON --> |"RPC poll"| SCANREC
+    CLI_SCAN --> |"local compute"| WS
+```
