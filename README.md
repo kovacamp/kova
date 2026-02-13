@@ -111,3 +111,22 @@ graph TB
 | 40 -- 59 | Caution | Moderate risk |
 | 60 -- 79 | Moderate | Lower risk |
 | 80 -- 100 | Healthy | Lowest observed risk |
+
+## Scoring Weights
+
+All weights are in basis points (sum = 10,000 = 100%).
+
+| Factor | Default Weight | bps |
+|--------|---------------|-----|
+| Fresh Wallet % | 20% | 2000 |
+| Bundler % | 15% | 1500 |
+| Top 10 Holder % | 15% | 1500 |
+| Smart Money | 10% | 1000 |
+| Dev Holdings | 10% | 1000 |
+| LP Locked | 10% | 1000 |
+| Mint Revoked | 5% | 500 |
+| Volume Trend | 5% | 500 |
+| Fresh Wallet Slope | 5% | 500 |
+| Top 10 Slope | 5% | 500 |
+
+Weights are on-chain and adjustable via `update_config` by the config authority.
