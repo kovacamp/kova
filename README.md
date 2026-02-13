@@ -130,3 +130,24 @@ All weights are in basis points (sum = 10,000 = 100%).
 | Top 10 Slope | 5% | 500 |
 
 Weights are on-chain and adjustable via `update_config` by the config authority.
+
+## Probability Distribution
+
+Given a score, Kova maps it to a four-bucket distribution (basis points,
+sum = 10,000):
+
+| Bucket | Formula |
+|--------|---------|
+| Death (rug / fade) | `max(0, 9500 - score * 80)` |
+| Reach 100K mcap | `min(score * 30, 2500)` |
+| Reach 300K mcap | `min(max(0, (score - 40) * 20), 1500)` |
+| Reach 1M+ mcap | remainder to 10,000 |
+
+Example at score 72:
+
+```
+Death     17.4%  ████████▋
+100K      21.6%  ██████████▊
+300K      6.4%   ███▏
+1M+       54.6%  ███████████████████████████▎
+```
