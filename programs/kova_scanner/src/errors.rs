@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 #[error_code]
 pub enum ScannerError {
-    /// Scoring weight total must equal exactly 10000 basis points.
+    /// Scoring weights total must equal exactly 10000 basis points.
     #[msg("Scoring weights must sum to 10000 basis points")]
     InvalidWeightSum,
 
