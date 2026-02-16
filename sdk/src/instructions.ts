@@ -83,11 +83,7 @@ function encodeWeights(weights: ScoringWeights): Buffer {
   return buf;
 }
 
-/**
- * Builds the initialize instruction.
- *
- * Creates the global TokenScanConfig PDA.
- */
+/** Builds the initialize instruction. */
 export function buildInitializeInstruction(
   authority: PublicKey,
   params: InitializeParams
