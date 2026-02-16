@@ -29,6 +29,7 @@ impl ScoreTier {
     }
 
     /// Returns a human-readable label for this tier.
+    /// Returns a human-readable label for display.
     pub fn label(&self) -> &'static str {
         match self {
             ScoreTier::Critical => "Critical",
