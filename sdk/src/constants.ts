@@ -23,7 +23,7 @@ export const MAX_METRIC_BPS = 10_000;
 /** Maximum survival score (0-100 scale). */
 export const MAX_SCORE = 100;
 
-/** Anchor account discriminator length in bytes (Anchor standard). */
+/** Account discriminator length in bytes (Anchor standard). */
 export const DISCRIMINATOR_LENGTH = 8;
 
 /** TokenScanConfig account space in bytes. */
