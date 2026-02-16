@@ -39,10 +39,7 @@ import {
   validateWeights,
 } from "./types";
 
-/**
- * Thrown when SDK validation fails before sending a transaction.
- * Check the message for details on which field failed validation.
- */
+/** Error thrown when SDK validation fails before sending a transaction. */
 export class KovaValidationError extends Error {
   constructor(message: string) {
     super(message);
