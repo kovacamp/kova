@@ -455,7 +455,6 @@ mod tests {
     }
 
     #[test]
-    /// Single-element slice should return zero standard deviation.
     fn test_std_deviation_single_value() {
         let values = vec![42];
         let std = std_deviation(&values).unwrap();
