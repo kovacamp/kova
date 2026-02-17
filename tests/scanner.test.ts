@@ -22,7 +22,6 @@ import {
 import { KovaValidationError } from "../sdk/src/client";
 
 describe("ScoreTier", () => {
-  // Tests for tier classification logic
   describe("tierFromScore", () => {
     it("assigns Critical for score 0", () => {
       expect(tierFromScore(0)).toBe(ScoreTier.Critical);
