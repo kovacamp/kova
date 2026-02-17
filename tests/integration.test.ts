@@ -15,6 +15,7 @@ import {
 import type { TokenMetrics } from "../sdk/src";
 
 describe("Instruction Builders", () => {
+  // Transaction instruction builder tests
   const authority = Keypair.generate();
   const tokenMint = Keypair.generate().publicKey;
 
