@@ -2,7 +2,6 @@ use anchor_lang::prelude::*;
 
 use crate::state::{ScanRecord, TokenScanConfig, TokenSnapshot};
 
-/// Accounts required for the initialize instruction.
 #[derive(Accounts)]
 pub struct Initialize<'info> {
     #[account(mut)]
