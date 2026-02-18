@@ -184,6 +184,7 @@ pub fn compute_weighted_score(metrics: &TokenMetrics, weights: &ScoringWeights) 
         .checked_div(100)
         .ok_or(ScannerError::ArithmeticOverflow)?;
 
+    // Clamp to 0-100 range
     let clamped = score_raw.min(MAX_SCORE as u64) as u8;
     Ok(clamped)
 }
