@@ -39,7 +39,7 @@ anchor test
 - Naming: use domain-specific names. Prefer `fresh_wallet_bps` over `amount` or `val`.
 - Comments: only on non-obvious logic. The code should be self-documenting where possible.
 
-## Security
+## Security and Safety
 
 - All on-chain authority checks must use Anchor's `constraint` attribute or `require!` macro.
 - PDA seeds and bumps must be validated in every account context.
