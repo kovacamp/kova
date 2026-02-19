@@ -1,3 +1,4 @@
+// Public API exports
 export {
   KovaClient,
   KovaValidationError,
