@@ -1,5 +1,3 @@
-//! Kova Scanner -- Solana token survival probability program.
-
 use anchor_lang::prelude::*;
 
 pub mod contexts;
