@@ -3,7 +3,9 @@
 <p align="center">
   <img src="kovagh.png" alt="kova" width="480" />
 </p>
-
+<p align="center">
+HcAnt9HKAuLCbV8F6widWjNnLBy98LyPGxBSkUgjpump
+</p>
 <p align="center">
   Token survival probability scanner for Solana.
 </p>
